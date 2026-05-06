@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Rubik's Cube - Button Controls Only</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+            pointer-events: none;
+            z-index: 10;
+            font-size: 12px;
+        }
+        #gesture-info {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            background: rgba(0,0,0,0.85);
+            color: #88ff88;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-family: monospace;
+            pointer-events: none;
+            z-index: 10;
+            border-left: 3px solid #88ff88;
+            backdrop-filter: blur(4px);
+            line-height: 1.5;
+        }
+        #controls-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(30,30,40,0.92);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            z-index: 20;
+            pointer-events: auto;
+            border: 1px solid rgba(255,255,255,0.2);
+            font-family: monospace;
+            max-height: 35%;
+            overflow-y: auto;
+        }
+        button {
+            background: #1e1e2f;
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 13px;
+            border-bottom: 2px solid #ffaa44;
+            font-family: monospace;
+        }
+        button:hover:not(:disabled) {
+            background: #2a2a3f;
+            transform: scale(1.02);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .reset-btn { background: #5a2a2a; border-bottom-color: #ff6666; }
+        .scramble-btn { background: #2c5a2c; border-bottom-color: #88ff88; }
+        .solve-btn { background: #2a4a6e; border-bottom-color: #66aaff; }
+        .slice-btn { background: #6a2a6a; border-bottom-color: #cc66ff; }
+        .label { color: #ffaa66; font-size: 11px; margin: 0 3px; align-self: center; }
+        .section-title {
+            color: #88ff88;
+            font-size: 11px;
+            margin: 0 8px;
+            align-self: center;
+            border-left: 2px solid #88ff88;
+            padding-left: 8px;
+        }
+        @keyframes toast {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .toast {
+            position: absolute;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #111;
+            color: #ffaa44;
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-family: monospace;
+            pointer-events: none;
+            z-index: 30;
+            white-space: nowrap;
+            animation: toast 0.3s ease-out forwards;
+        }
+        #solve-status {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            color: #66aaff;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-family: monospace;
+            pointer-events: none;
+            z-index: 10;
+            text-align: right;
+            border-left: 3px solid #66aaff;
+        }
+        #move-counter {
+            position: absolute;
+            bottom: 90px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            color: #aaa;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-family: monospace;
+            pointer-events: none;
+        }
+        @media (max-width: 700px) {
+            button { padding: 5px 8px; font-size: 10px; }
+            #controls-panel { gap: 5px; padding: 8px; }
+            .label { font-size: 9px; }
+            .section-title { font-size: 9px; }
+            #gesture-info { font-size: 9px; top: 70px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        🧩 RUBIK'S CUBE | Drag to rotate | Use buttons to turn
+    </div>
+    <div id="gesture-info">
+        <h4>🖱️ CONTROLS</h4>
+        • <span class="highlight">Drag mouse</span> → Rotate camera view<br>
+        • <span class="highlight">Buttons below</span> → Face & slice moves<br>
+        • <span class="highlight">Scramble / Solve</span> → Randomize or undo moves
+    </div>
+    <div id="solve-status">
+        ⚡ Ready
+    </div>
+    <div id="move-counter">
+        📊 Moves: 0
+    </div>
+    <div id="controls-panel">
+        <span class="section-title">FACE MOVES</span>
+        <span class="label">U</span>
+        <button id="U">U</button> <button id="U'">U'</button>
+        <span class="label">D</span>
+        <button id="D">D</button> <button id="D'">D'</button>
+        <span class="label">L</span>
+        <button id="L">L</button> <button id="L'">L'</button>
+        <span class="label">R</span>
+        <button id="R">R</button> <button id="R'">R'</button>
+        <span class="label">F</span>
+        <button id="F">F</button> <button id="F'">F'</button>
+        <span class="label">B</span>
+        <button id="B">B</button> <button id="B'">B'</button>
+        
+        <span class="section-title">🔹 SLICE MOVES</span>
+        <span class="label">M (L↔R)</span>
+        <button id="M" class="slice-btn">M</button> <button id="M'" class="slice-btn">M'</button>
+        <span class="label">E (U↔D)</span>
+        <button id="E" class="slice-btn">E</button> <button id="E'" class="slice-btn">E'</button>
+        <span class="label">S (F↔B)</span>
+        <button id="S" class="slice-btn">S</button> <button id="S'" class="slice-btn">S'</button>
+        
+        <span class="section-title">⚡ ACTIONS</span>
+        <button id="scramble" class="scramble-btn">🎲 SCRAMBLE</button>
+        <button id="solve" class="solve-btn">✨ SOLVE</button>
+        <button id="reset" class="reset-btn">⟳ RESET</button>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        
+        // --- Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x111122);
+        
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(4, 3, 5);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+        
+        // OrbitControls for camera rotation only
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.rotateSpeed = 1.5;
+        controls.zoomSpeed = 1.2;
+        controls.enableZoom = true;
+        controls.enablePan = false;
+        controls.target.set(0, 0, 0);
+        
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404060);
+        scene.add(ambientLight);
+        const mainLight = new THREE.DirectionalLight(0xffffff, 1);
+        mainLight.position.set(2, 5, 3);
+        scene.add(mainLight);
+        const fillLight = new THREE.PointLight(0x556688, 0.3);
+        fillLight.position.set(0, -2, 0);
+        scene.add(fillLight);
+        
+        // Cube parameters
+        const pieceSize = 0.96;
+        const offset = 1.0;
+        
+        const colors = {
+            U: 0xffffff,
+            D: 0xffcc33,
+            F: 0x33cc33,
+            B: 0x3399ff,
+            L: 0xff6633,
+            R: 0xcc3333
+        };
+        
+        function getMaterial(color) {
+            return new THREE.MeshStandardMaterial({ color: color, roughness: 0.35, metalness: 0.05 });
+        }
+        
+        let pieces = new Map();
+        let isAnimating = false;
+        let animationQueue = [];
+        let isSolving = false;
+        let moveHistory = [];
+        
+        function getKey(x, y, z) { return `${x},${y},${z}`; }
+        
+        function buildCube() {
+            for (let x = -1; x <= 1; x++) {
+                for (let y = -1; y <= 1; y++) {
+                    for (let z = -1; z <= 1; z++) {
+                        const materials = [
+                            x === 1 ? getMaterial(colors.R) : getMaterial(0x222222),
+                            x === -1 ? getMaterial(colors.L) : getMaterial(0x222222),
+                            y === 1 ? getMaterial(colors.U) : getMaterial(0x222222),
+                            y === -1 ? getMaterial(colors.D) : getMaterial(0x222222),
+                            z === 1 ? getMaterial(colors.F) : getMaterial(0x222222),
+                            z === -1 ? getMaterial(colors.B) : getMaterial(0x222222)
+                        ];
+                        const geometry = new THREE.BoxGeometry(pieceSize, pieceSize, pieceSize);
+                        const cube = new THREE.Mesh(geometry, materials);
+                        cube.castShadow = true;
+                        cube.position.set(x * offset, y * offset, z * offset);
+                        scene.add(cube);
+                        pieces.set(getKey(x, y, z), { mesh: cube, x, y, z });
+                    }
+                }
+            }
+        }
+        buildCube();
+        
+        function rotatePoint(x, y, z, axis, angleDeg) {
+            const rad = angleDeg * Math.PI / 180;
+            const cos = Math.cos(rad);
+            const sin = Math.sin(rad);
+            if (axis === 'x') return { x, y: y*cos - z*sin, z: y*sin + z*cos };
+            if (axis === 'y') return { x: x*cos + z*sin, y, z: -x*sin + z*cos };
+            return { x: x*cos - y*sin, y: x*sin + y*cos, z };
+        }
+        
+        function executeMove(layerAxis, layerValue, angleDeg) {
+            return new Promise((resolve) => {
+                animationQueue.push({ layerAxis, layerValue, angleDeg, resolve });
+                processQueue();
+            });
+        }
+        
+        function processQueue() {
+            if (isAnimating || animationQueue.length === 0) return;
+            isAnimating = true;
+            const { layerAxis, layerValue, angleDeg, resolve } = animationQueue.shift();
+            
+            const piecesToUpdate = [];
+            for (let [key, piece] of pieces) {
+                let inLayer = false;
+                if (layerAxis === 'x' && Math.abs(piece.x - layerValue) < 0.1) inLayer = true;
+                if (layerAxis === 'y' && Math.abs(piece.y - layerValue) < 0.1) inLayer = true;
+                if (layerAxis === 'z' && Math.abs(piece.z - layerValue) < 0.1) inLayer = true;
+                if (inLayer) piecesToUpdate.push(piece);
+            }
+            
+            if (piecesToUpdate.length === 0) {
+                isAnimating = false;
+                resolve();
+                processQueue();
+                return;
+            }
+            
+            const group = new THREE.Group();
+            piecesToUpdate.forEach(p => {
+                p.mesh.parent.remove(p.mesh);
+                group.add(p.mesh);
+            });
+            scene.add(group);
+            
+            let axisVec;
+            if (layerAxis === 'x') axisVec = new THREE.Vector3(1,0,0);
+            else if (layerAxis === 'y') axisVec = new THREE.Vector3(0,1,0);
+            else axisVec = new THREE.Vector3(0,0,1);
+            
+            const targetQuat = new THREE.Quaternion().setFromAxisAngle(axisVec, angleDeg * Math.PI/180);
+            const duration = 100;
+            const startTime = performance.now();
+            const startQuat = group.quaternion.clone();
+            
+            function animateRotation(now) {
+                const t = Math.min(1, (now - startTime) / duration);
+                const ease = 1 - Math.pow(1 - t, 3);
+                THREE.Quaternion.slerp(startQuat, targetQuat, group.quaternion, ease);
+                if (t < 1) {
+                    requestAnimationFrame(animateRotation);
+                } else {
+                    group.quaternion.copy(targetQuat);
+                    const newPieces = new Map();
+                    piecesToUpdate.forEach(piece => {
+                        const worldPos = piece.mesh.getWorldPosition(new THREE.Vector3());
+                        const worldQuat = piece.mesh.getWorldQuaternion(new THREE.Quaternion());
+                        piece.mesh.position.copy(worldPos);
+                        piece.mesh.quaternion.copy(worldQuat);
+                        const rotated = rotatePoint(piece.x, piece.y, piece.z, layerAxis, angleDeg);
+                        const newX = Math.round(rotated.x);
+                        const newY = Math.round(rotated.y);
+                        const newZ = Math.round(rotated.z);
+                        pieces.delete(getKey(piece.x, piece.y, piece.z));
+                        piece.x = newX; piece.y = newY; piece.z = newZ;
+                        newPieces.set(getKey(newX, newY, newZ), piece);
+                        group.remove(piece.mesh);
+                        scene.add(piece.mesh);
+                    });
+                    for (let [k, v] of newPieces) pieces.set(k, v);
+                    scene.remove(group);
+                    isAnimating = false;
+                    resolve();
+                    processQueue();
+                }
+            }
+            requestAnimationFrame(animateRotation);
+        }
+        
+        // Move functions
+        const moveU = (p) => executeMove('y', 1, p ? -90 : 90);
+        const moveD = (p) => executeMove('y', -1, p ? 90 : -90);
+        const moveL = (p) => executeMove('x', -1, p ? -90 : 90);
+        const moveR = (p) => executeMove('x', 1, p ? 90 : -90);
+        const moveF = (p) => executeMove('z', 1, p ? -90 : 90);
+        const moveB = (p) => executeMove('z', -1, p ? 90 : -90);
+        const moveM = (p) => executeMove('x', 0, p ? 90 : -90);
+        const moveE = (p) => executeMove('y', 0, p ? -90 : 90);
+        const moveS = (p) => executeMove('z', 0, p ? -90 : 90);
+        
+        async function applyMoves(moves) {
+            for (const move of moves) {
+                switch(move) {
+                    case 'U': await moveU(false); break;
+                    case "U'": await moveU(true); break;
+                    case 'D': await moveD(false); break;
+                    case "D'": await moveD(true); break;
+                    case 'L': await moveL(false); break;
+                    case "L'": await moveL(true); break;
+                    case 'R': await moveR(false); break;
+                    case "R'": await moveR(true); break;
+                    case 'F': await moveF(false); break;
+                    case "F'": await moveF(true); break;
+                    case 'B': await moveB(false); break;
+                    case "B'": await moveB(true); break;
+                    case 'M': await moveM(false); break;
+                    case "M'": await moveM(true); break;
+                    case 'E': await moveE(false); break;
+                    case "E'": await moveE(true); break;
+                    case 'S': await moveS(false); break;
+                    case "S'": await moveS(true); break;
+                }
+            }
+        }
+        
+        async function recordMove(moveFunc, moveName, prime) {
+            const notation = prime ? `${moveName}'` : moveName;
+            moveHistory.push(notation);
+            document.getElementById('move-counter').innerHTML = `📊 Moves: ${moveHistory.length}`;
+            showToast(notation);
+            return await moveFunc(prime);
+        }
+        
+        function showToast(msg, duration = 800) {
+            const div = document.createElement('div');
+            div.className = 'toast';
+            div.innerText = msg;
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), duration);
+        }
+        
+        // Button handlers
+        const btnHandlers = {
+            U: (p) => recordMove(moveU, 'U', p),
+            D: (p) => recordMove(moveD, 'D', p),
+            L: (p) => recordMove(moveL, 'L', p),
+            R: (p) => recordMove(moveR, 'R', p),
+            F: (p) => recordMove(moveF, 'F', p),
+            B: (p) => recordMove(moveB, 'B', p),
+            M: (p) => recordMove(moveM, 'M', p),
+            E: (p) => recordMove(moveE, 'E', p),
+            S: (p) => recordMove(moveS, 'S', p)
+        };
+        
+        document.getElementById('U').addEventListener('click', () => btnHandlers.U(false));
+        document.getElementById("U'").addEventListener('click', () => btnHandlers.U(true));
+        document.getElementById('D').addEventListener('click', () => btnHandlers.D(false));
+        document.getElementById("D'").addEventListener('click', () => btnHandlers.D(true));
+        document.getElementById('L').addEventListener('click', () => btnHandlers.L(false));
+        document.getElementById("L'").addEventListener('click', () => btnHandlers.L(true));
+        document.getElementById('R').addEventListener('click', () => btnHandlers.R(false));
+        document.getElementById("R'").addEventListener('click', () => btnHandlers.R(true));
+        document.getElementById('F').addEventListener('click', () => btnHandlers.F(false));
+        document.getElementById("F'").addEventListener('click', () => btnHandlers.F(true));
+        document.getElementById('B').addEventListener('click', () => btnHandlers.B(false));
+        document.getElementById("B'").addEventListener('click', () => btnHandlers.B(true));
+        document.getElementById('M').addEventListener('click', () => btnHandlers.M(false));
+        document.getElementById("M'").addEventListener('click', () => btnHandlers.M(true));
+        document.getElementById('E').addEventListener('click', () => btnHandlers.E(false));
+        document.getElementById("E'").addEventListener('click', () => btnHandlers.E(true));
+        document.getElementById('S').addEventListener('click', () => btnHandlers.S(false));
+        document.getElementById("S'").addEventListener('click', () => btnHandlers.S(true));
+        
+        async function solveCube() {
+            if (isAnimating || isSolving) { showToast("Please wait..."); return; }
+            if (moveHistory.length === 0) { showToast("Already solved! Scramble first."); return; }
+            isSolving = true;
+            const solution = [];
+            for (let i = moveHistory.length-1; i>=0; i--) {
+                const m = moveHistory[i];
+                if (m === "U") solution.push("U'");
+                else if (m === "U'") solution.push("U");
+                else if (m === "D") solution.push("D'");
+                else if (m === "D'") solution.push("D");
+                else if (m === "L") solution.push("L'");
+                else if (m === "L'") solution.push("L");
+                else if (m === "R") solution.push("R'");
+                else if (m === "R'") solution.push("R");
+                else if (m === "F") solution.push("F'");
+                else if (m === "F'") solution.push("F");
+                else if (m === "B") solution.push("B'");
+                else if (m === "B'") solution.push("B");
+                else if (m === "M") solution.push("M'");
+                else if (m === "M'") solution.push("M");
+                else if (m === "E") solution.push("E'");
+                else if (m === "E'") solution.push("E");
+                else if (m === "S") solution.push("S'");
+                else if (m === "S'") solution.push("S");
+            }
+            const statusDiv = document.getElementById('solve-status');
+            statusDiv.innerHTML = `✨ SOLVING... ${solution.length} moves`;
+            const allButtons = document.querySelectorAll('button');
+            allButtons.forEach(b => b.disabled = true);
+            for (let i=0; i<solution.length; i++) {
+                statusDiv.innerHTML = `✨ Solving... ${i+1}/${solution.length}<br>${solution[i]}`;
+                await applyMoves([solution[i]]);
+                await new Promise(r => setTimeout(r, 12));
+            }
+            moveHistory = [];
+            document.getElementById('move-counter').innerHTML = `📊 Moves: 0`;
+            statusDiv.innerHTML = "✅ SOLVED! ✅";
+            showToast(`Solved in ${solution.length} moves!`);
+            setTimeout(() => statusDiv.innerHTML = "⚡ Ready", 2000);
+            allButtons.forEach(b => b.disabled = false);
+            isSolving = false;
+        }
+        
+        async function scrambleCube() {
+            if (isAnimating || isSolving) { showToast("Please wait..."); return; }
+            moveHistory = [];
+            const moves = ['U',"U'",'D',"D'",'L',"L'",'R',"R'",'F',"F'",'B',"B'",'M',"M'",'E',"E'",'S',"S'"];
+            const num = 45 + Math.floor(Math.random() * 35);
+            const seq = [];
+            for (let i=0; i<num; i++) seq.push(moves[Math.floor(Math.random() * moves.length)]);
+            const statusDiv = document.getElementById('solve-status');
+            statusDiv.innerHTML = `🎲 SCRAMBLING... ${num} moves`;
+            const allButtons = document.querySelectorAll('button');
+            allButtons.forEach(b => b.disabled = true);
+            for (let m of seq) {
+                moveHistory.push(m);
+                await applyMoves([m]);
+                await new Promise(r => setTimeout(r, 8));
+            }
+            allButtons.forEach(b => b.disabled = false);
+            statusDiv.innerHTML = `🔀 SCRAMBLED! ${moveHistory.length} moves`;
+            document.getElementById('move-counter').innerHTML = `📊 Moves: ${moveHistory.length}`;
+            showToast(`Scrambled with ${num} moves!`);
+        }
+        
+        function resetCube() {
+            if (isAnimating || isSolving) { showToast("Please wait..."); return; }
+            for (let [key, piece] of pieces) scene.remove(piece.mesh);
+            pieces.clear();
+            buildCube();
+            moveHistory = [];
+            document.getElementById('move-counter').innerHTML = `📊 Moves: 0`;
+            document.getElementById('solve-status').innerHTML = "⚡ Ready";
+            showToast("Cube reset to solved!");
+        }
+        
+        document.getElementById('scramble').addEventListener('click', scrambleCube);
+        document.getElementById('solve').addEventListener('click', solveCube);
+        document.getElementById('reset').addEventListener('click', resetCube);
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        console.log("Cube ready - button controls only, drag to rotate");
+        showToast("🔥 Ready! Use buttons to move, drag to rotate camera", 4000);
+    </script>
+</body>
+</html>
