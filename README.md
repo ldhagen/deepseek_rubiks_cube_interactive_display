@@ -5,7 +5,7 @@ Here's the fully updated `README.md` with the screenshot filename changed to `sc
 
 A fully interactive, locally hosted Rubik’s Cube built with Three.js and vanilla JavaScript. Rotate the camera, make moves with buttons, scramble, and solve by undoing your move history.
 
-![Rubik’s Cube Screenshot](screenshot.png)
+![Interactive display screenshot](screenshot.png)
 
 ## ✨ Features
 
