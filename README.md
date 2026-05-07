@@ -1,11 +1,9 @@
-Here's the fully updated `README.md` with the screenshot filename changed to `screenshot.png` and all instances of “Rubik’s” correctly spelled.
-
 ```markdown
 # 🧩 Interactive 3D Rubik’s Cube
 
 A fully interactive, locally hosted Rubik’s Cube built with Three.js and vanilla JavaScript. Rotate the camera, make moves with buttons, scramble, and solve by undoing your move history.
 
-![Interactive display screenshot](screenshot.png)
+![Interactive display screenshot](https://raw.githubusercontent.com/ldhagen/deepseek_rubiks_cube_interactive_display/refs/heads/main/screenshot.png)
 
 ## ✨ Features
 
