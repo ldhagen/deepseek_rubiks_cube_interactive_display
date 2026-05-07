@@ -90,7 +90,7 @@ Pull requests are welcome! For major changes, please open an issue first to disc
 ## 🙏 Acknowledgements
 
 - Three.js community for the excellent 3D library
-- Rubik’s Cube colour scheme is standard
+- Rubik’s Cube color scheme is standard
 - Inspired by classic cube simulators
 
 ---
